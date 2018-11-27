@@ -33,7 +33,7 @@ def train_appearance(use_pickle):
 	valfile = open('val.txt', 'a')
 	
 	dict_args = {
-			'input_dim' : 1000,
+			'input_dim' : 500,
 			'rnn_hdim' : 200,
 			'rnn_type' : 'LSTM',
 			'feature_dim' : 100,

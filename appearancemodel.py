@@ -22,6 +22,7 @@ class AppearanceModel(nn.Module):
 					'feature_dim' : self.feature_dim,
 				}
 
+		self.dimred_layer = nn.Linear(1000, self.input_dim)
 		self.appearance_layer = RNNLayer(dict_args)
 
 	def sterile(self):
@@ -31,6 +32,10 @@ class AppearanceModel(nn.Module):
 	def forward(self, isequence, itensor):
 		#isequence: batch_size * seq_len * inp_dim
 		#itensor: batch_size * inp_dim
+
+		isequence = self.dimred_layer(isequence)
+		itensor = self.dimred_layer(itensor)
+
 		output, features = self.appearance_layer(isequence, itensor)
 		return output, features
 
