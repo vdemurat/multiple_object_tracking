@@ -25,12 +25,12 @@ class dataset(data.Dataset):
 			trackframes.append(imagetensor)
 		detectionframe = imagetotensor(self.pixel, self.pretrained, self.dataclass.data_folder, self.dataclass.dir_type, dirid, dframeid, detection)
 
-		batchframes = torch.stack(trackframes + [detectionframe])			
+		'''batchframes = torch.stack(trackframes + [detectionframe])	
 		batchtensors = self.pretrained(Variable(batchframes))
 		trackframestensors = batchtensors[:-1].data.cpu()
 		detectionframetensor = batchtensors[-1].view(-1).data.cpu()		
-		return [trackframestensors, detectionframetensor, label]
-		#return [torch.stack(trackframes), detectionframe, label]
+		return [trackframestensors, detectionframetensor, label]'''
+		return [torch.stack(trackframes), detectionframe, label]
 
 	def __len__(self):
 		return len(self.data)

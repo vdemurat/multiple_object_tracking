@@ -1,6 +1,8 @@
 import os
 import torch
 import time
+import pickle
+
 import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
@@ -32,8 +34,10 @@ class PreTrainedResnet(nn.Module):
 		return intermediate_features[0]
 
 class Pixel():
-	def __init__(self):
+	def __init__(self, pklfilepath):
 		self.pathtoimage = {}
+		self.pathtotensor = {}
+		self.pklfilepath = pklfilepath
 
 	def addimage(self, path, image):
 		self.pathtoimage[path] = image
@@ -43,38 +47,62 @@ class Pixel():
 			return self.pathtoimage[path]
 		return None
 
+	def addtensor(self, path, tensor):
+		self.pathtotensor[path] = tensor
+
+	def gettensor(self, path):
+		if path in self.pathtotensor:
+			return self.pathtotensor[path]
+		return None
+
+	def save(self):
+		pklfile = open(self.pklfilepath, 'wb')
+		pickle.dump(self.pathtotensor, pklfile)
+		pklfile.close()
+		print("saving the pklfile to {0}".format(self.pklfilepath))
+
+	def load(self):
+		pklfile = open(self.pklfilepath, 'rb')
+		self.pathtotensor = pickle.load(pklfile)
+		pklfile.close()
+
 
 def imagetotensor(pixel, pretrained, datafolder, dirtype, dirid, frameid, coordinates):
 	dirfolder = 'MOT17-' + dirid + '-' + dirtype
 	filename = ''.join(['0' for _ in range(6 - len(frameid))]) + frameid
 
-	pixelkey = dirfolder + '_' + filename
-	image = pixel.getimage(pixelkey)
-	if image is None:
-		imagepath = os.path.join(datafolder, dirfolder, 'img1', filename + '.jpg')
-		image = Image.open(imagepath).convert('RGB')
-		pixel.addimage(pixelkey, image)
-	image = image.crop(
-		(float(coordinates[0]), 
-		float(coordinates[1]), 
-		float(coordinates[0]) + float(coordinates[2]), 
-		float(coordinates[1]) + float(coordinates[3]))
-	)
+	pixelkey = dirfolder + '_' + filename + '_' + '_'.join(coordinates)
+	tensor = pixel.gettensor(pixelkey)
+	if tensor is None:
+		imagekey = dirfolder + '_' + filename
+		image = pixel.getimage(imagekey)
 
-	normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+		if image is None:
+			imagepath = os.path.join(datafolder, dirfolder, 'img1', filename + '.jpg')
+			image = Image.open(imagepath).convert('RGB')
+			pixel.addimage(imagekey, image)
+
+		image = image.crop(
+			(float(coordinates[0]), 
+			float(coordinates[1]), 
+			float(coordinates[0]) + float(coordinates[2]), 
+			float(coordinates[1]) + float(coordinates[3]))
+		)
+			
+		normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-	transform = transforms.Compose([
-        transforms.Resize(256),
-        #transforms.Scale(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        normalize,
-    ])
-	image = transform(image).unsqueeze(0)
-	if torch.cuda.is_available(): image = image.cuda()
-	#tensor = pretrained(Variable(image)).view(-1).data.cpu()
-	return image.squeeze(0)
-
+		transform = transforms.Compose([
+        		transforms.Resize(256),
+        		#transforms.Scale(256),
+        		transforms.CenterCrop(224),
+        		transforms.ToTensor(),
+        		normalize,
+    		])
+		image = transform(image).unsqueeze(0)
+		if torch.cuda.is_available(): image = image.cuda()
+		tensor = pretrained(Variable(image)).view(-1).data.cpu()
+		pixel.addtensor(pixelkey, tensor)
+	return tensor
 
 if __name__=='__main__':
 	datafolder = 'MOT17/train/'

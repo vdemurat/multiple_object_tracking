@@ -13,14 +13,15 @@ from datautils import PreTrainedResnet, Pixel
 
 from dataloader import get_train_data
 
-def train_appearance():
+def train_appearance(use_pickle):
 
 	modeltype = 'appearance'
 	train_batch_size = 64
 	sequence_length = 6
 	directory_type = 'DPM'
 
-	pixel = Pixel()
+	pixel = Pixel('pixel.pkl')
+	if use_pickle: pixel.load()
 	pretrained = PreTrainedResnet({'intermediate_layers':['fc']})
 	if torch.cuda.is_available():
 		pretrained = pretrained.cuda()
@@ -42,7 +43,7 @@ def train_appearance():
 
 	num_epochs = 20
 	learning_rate = 1.0
-	criterion = nn.CrossEntropyLoss() 
+	criterion = nn.NLLLoss() 
 	optimizer = optim.Adadelta(appmodel.parameters(), lr=learning_rate, rho=0.95, eps=1e-06, weight_decay=0)
 	
 	if torch.cuda.is_available():
@@ -50,9 +51,7 @@ def train_appearance():
 		criterion = criterion.cuda()
 
 	for epoch in range(num_epochs):
-		b = time.time()
 		for i, batch in enumerate(train_dataloader):
-			print(time.time() - b)
 			trackframes = Variable(torch.stack(batch[0]))
 			detectionframe = Variable(torch.stack(batch[1]))
 			labels = Variable(torch.LongTensor(batch[2]))
@@ -65,10 +64,14 @@ def train_appearance():
 			appmodel = appmodel.train()
 
 			output, _ = appmodel(trackframes, detectionframe)
+			output = functional.log_softmax(output, dim=-1)
 			loss = criterion(output, labels)
+
+			optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
-			b = time.time()
+			nn.utils.clip_grad_norm(appmodel.parameters(), 5.0)
+						
 			if((i+1)%10 == 0):
 				print('Epoch: [{0}/{1}], Step: [{2}/{3}], Loss: {4}'.format( \
 							epoch+1, num_epochs, i+1, train_data_size//train_batch_size, loss.data[0]))
@@ -83,6 +86,7 @@ def train_appearance():
 			torch.save({'state_dict':appmodel.state_dict(), 'dict_args':dict_args}, file)
 			print('Saving the model to {}'.format(save_dir+"epoch{}".format(epoch)))
 			file.close()
+		
 
 		#Validation accuracy
 		if(epoch%1 == 0): 
@@ -104,17 +108,26 @@ def train_appearance():
 				output, _ = appmodel(trackframes, detectionframe)
 
 				predictions = output.max(dim=-1)[1]
-				num_correct += (predictions == labels).sum().item()
+				num_correct += (predictions == labels).sum().data[0]
 				num_total += len(labels)
 
 			accuracy = float(num_correct/num_total)
-
+			print('Epoch {} Accuracy {} \n'.format(epoch, accuracy))
 			valfile.write('Epoch {} Accuracy {} \n'.format(epoch, accuracy))
+
+		#Saving the pickle
+		if epoch == 0:
+			if not use_pickle:
+				pixel.save()
+
 	valfile.close()
 
 				
 if __name__=='__main__':
 	cuetype = sys.argv[1]
+	use_pkl = sys.argv[2]
+	if use_pkl == 'True': use_pickle = True
+	else: use_pickle = False
 	if cuetype == 'appearance':
-		train_appearance()
+		train_appearance(use_pickle)
 
