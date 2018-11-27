@@ -10,7 +10,7 @@ class datastorage():
 		self.detections = {} #{dirindex : {frameindex : {detectionid : (p1, p2, p3, p4)}}}
 		self.traintracks_data = {}
 		self.valtracks_data = {}
-		self.negsamples = 2
+		self.negsamples = 1
 		self.dir_type = None
 
 	def generateid(self, findex, dirindex):

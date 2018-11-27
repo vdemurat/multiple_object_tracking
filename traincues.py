@@ -41,7 +41,7 @@ def train_appearance(use_pickle):
 
 	appmodel = AppearanceModel(dict_args)
 
-	num_epochs = 20
+	num_epochs = 300
 	learning_rate = 1.0
 	criterion = nn.NLLLoss() 
 	optimizer = optim.Adadelta(appmodel.parameters(), lr=learning_rate, rho=0.95, eps=1e-06, weight_decay=0)
