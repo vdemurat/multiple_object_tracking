@@ -5,7 +5,7 @@ from dataset import dataset
 from dataclass import datastorage
 from datautils import Pixel
 
-def get_train_data(batch_size, seq_len, dir_type, pixel, pretrained, shuffle = True, num_workers = 1):
+def get_train_data(batch_size, seq_len, dir_type, pixel, pretrained, shuffle = True, num_workers = 0):
 	train_folder = 'MOT17/train/'
 	datastorageobject = datastorage(train_folder)
 	datastorageobject.prepare(dir_type)
