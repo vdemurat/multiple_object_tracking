@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import torch
 import torch.nn as nn
@@ -49,8 +50,9 @@ def train_appearance():
 		criterion = criterion.cuda()
 
 	for epoch in range(num_epochs):
+		b = time.time()
 		for i, batch in enumerate(train_dataloader):
-
+			print(time.time() - b)
 			trackframes = Variable(torch.stack(batch[0]))
 			detectionframe = Variable(torch.stack(batch[1]))
 			labels = Variable(torch.LongTensor(batch[2]))
@@ -66,7 +68,7 @@ def train_appearance():
 			loss = criterion(output, labels)
 			loss.backward()
 			optimizer.step()
-
+			b = time.time()
 			if((i+1)%10 == 0):
 				print('Epoch: [{0}/{1}], Step: [{2}/{3}], Loss: {4}'.format( \
 							epoch+1, num_epochs, i+1, train_data_size//train_batch_size, loss.data[0]))

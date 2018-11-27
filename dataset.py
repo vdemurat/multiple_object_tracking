@@ -1,6 +1,9 @@
 import os
+import time
+
 import torch
 import torch.utils.data as data
+from torch.autograd import Variable
 
 from dataclass import datastorage
 from datautils import imagetotensor
@@ -21,7 +24,13 @@ class dataset(data.Dataset):
 			imagetensor = imagetotensor(self.pixel, self.pretrained, self.dataclass.data_folder, self.dataclass.dir_type, dirid, frameid, coords)
 			trackframes.append(imagetensor)
 		detectionframe = imagetotensor(self.pixel, self.pretrained, self.dataclass.data_folder, self.dataclass.dir_type, dirid, dframeid, detection)
-		return [torch.stack(trackframes), detectionframe, label]
+
+		batchframes = torch.stack(trackframes + [detectionframe])			
+		batchtensors = self.pretrained(Variable(batchframes))
+		trackframestensors = batchtensors[:-1].data.cpu()
+		detectionframetensor = batchtensors[-1].view(-1).data.cpu()		
+		return [trackframestensors, detectionframetensor, label]
+		#return [torch.stack(trackframes), detectionframe, label]
 
 	def __len__(self):
 		return len(self.data)

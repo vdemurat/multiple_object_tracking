@@ -47,14 +47,13 @@ class Pixel():
 def imagetotensor(pixel, pretrained, datafolder, dirtype, dirid, frameid, coordinates):
 	dirfolder = 'MOT17-' + dirid + '-' + dirtype
 	filename = ''.join(['0' for _ in range(6 - len(frameid))]) + frameid
-	
+
 	pixelkey = dirfolder + '_' + filename
 	image = pixel.getimage(pixelkey)
 	if image is None:
 		imagepath = os.path.join(datafolder, dirfolder, 'img1', filename + '.jpg')
 		image = Image.open(imagepath).convert('RGB')
 		pixel.addimage(pixelkey, image)
-
 	image = image.crop(
 		(float(coordinates[0]), 
 		float(coordinates[1]), 
@@ -73,8 +72,8 @@ def imagetotensor(pixel, pretrained, datafolder, dirtype, dirid, frameid, coordi
     ])
 	image = transform(image).unsqueeze(0)
 	if torch.cuda.is_available(): image = image.cuda()
-
-	return pretrained(Variable(image)).view(-1).data.cpu()
+	#tensor = pretrained(Variable(image)).view(-1).data.cpu()
+	return image.squeeze(0)
 
 
 if __name__=='__main__':
