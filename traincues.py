@@ -8,7 +8,7 @@ import torch.nn.functional as functional
 import torch.optim as optim
 
 from appearancemodel import AppearanceModel
-from datautils import Pixel
+from datautils import PreTrainedResnet, Pixel
 
 from dataloader import get_train_data
 
@@ -20,8 +20,12 @@ def train_appearance():
 	directory_type = 'DPM'
 
 	pixel = Pixel()
+	pretrained = PreTrainedResnet({'intermediate_layers':['fc']})
+	if torch.cuda.is_available():
+		pretrained = pretrained.cuda()
+
 	train_dataloader, train_data_size, val_dataloader, val_data_size = \
-		get_train_data(train_batch_size, sequence_length, directory_type, pixel)
+		get_train_data(train_batch_size, sequence_length, directory_type, pixel, pretrained)
 
 	save_dir = 'models/{}/'.format(modeltype)
 	valfile = open('val.txt', 'a')

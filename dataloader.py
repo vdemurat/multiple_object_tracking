@@ -5,16 +5,16 @@ from dataset import dataset
 from dataclass import datastorage
 from datautils import Pixel
 
-def get_train_data(batch_size, seq_len, dir_type, pixel, shuffle = True, num_workers = 1):
+def get_train_data(batch_size, seq_len, dir_type, pixel, pretrained, shuffle = True, num_workers = 1):
 	train_folder = 'MOT17/train/'
 	datastorageobject = datastorage(train_folder)
 	datastorageobject.prepare(dir_type)
 	datastorageobject.split(seq_len)
 	
-	traindatasetobject = dataset(datastorageobject, seq_len, pixel, 'train')
+	traindatasetobject = dataset(datastorageobject, seq_len, pixel, pretrained, 'train')
 	traindatasetobject.create()
 
-	valdatasetobject = dataset(datastorageobject, seq_len, pixel, 'val')
+	valdatasetobject = dataset(datastorageobject, seq_len, pixel, pretrained, 'val')
 	valdatasetobject.create()
 
 	traindataloader = data.DataLoader(traindatasetobject, batch_size=batch_size, collate_fn=traindatasetobject.collate_fn,  shuffle=shuffle, num_workers=num_workers)

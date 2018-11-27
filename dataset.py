@@ -3,14 +3,14 @@ import torch
 import torch.utils.data as data
 
 from dataclass import datastorage
-from datautils import imagetotensor, PreTrainedResnet, Pixel
+from datautils import imagetotensor
 
 class dataset(data.Dataset):
-	def __init__(self, dataclass, seqlen, pixel, mode='train'):
+	def __init__(self, dataclass, seqlen, pixel, pretrained, mode='train'):
 		self.dataclass = dataclass
 		self.seqlen = seqlen
 		self.data = []
-		self.pretrained = PreTrainedResnet({'intermediate_layers':['fc']})
+		self.pretrained = pretrained
 		self.pixel = pixel
 		self.mode = mode
 
