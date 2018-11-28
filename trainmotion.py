@@ -13,7 +13,7 @@ from datautils import PreTrainedResnet, Pixel
 
 from dataloader import get_train_data
 
-def train_motion(use_pickle=False):
+def train_motion(use_pickle=True):
 
 	modeltype = 'motion'
 	train_batch_size = 64
