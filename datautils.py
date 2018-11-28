@@ -104,6 +104,10 @@ def imagetotensor(pixel, pretrained, datafolder, dirtype, dirid, frameid, coordi
 		pixel.addtensor(pixelkey, tensor)
 	return tensor
 
+def coordstotensor(coordinates):
+	top_x, top_y, height, width = coordinates
+	return torch.FloatTensor([float(top_x), float(top_y), float(height), float(width)])
+
 if __name__=='__main__':
 	datafolder = 'MOT17/train/'
 	dirtype = 'DPM'

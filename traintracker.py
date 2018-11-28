@@ -13,7 +13,7 @@ from datautils import PreTrainedResnet, Pixel
 
 from dataloader import get_train_data
 
-def train_tracker(use_pickle):
+def train_tracker(use_pickle, use_appearance=True, use_motion=False):
 
 	modeltype = 'tracker'
 	train_batch_size = 64
@@ -33,13 +33,14 @@ def train_tracker(use_pickle):
 	valfile = open('val.txt', 'a')
 	
 	dict_args = {
-			'input_dim' : 500,
+			'app_input_dim' : 500,
+			'mot_input_dim' : 4,
 			'rnn_hdim' : 200,
 			'rnn_type' : 'LSTM',
 			'feature_dim' : 100,
 		}
 
-	trackmodel = TrackingModel(dict_args)
+	trackmodel = TrackingModel(dict_args, use_appearance=use_appearance, use_motion=use_motion)
 
 	num_epochs = 300
 	learning_rate = 1.0
@@ -55,15 +56,20 @@ def train_tracker(use_pickle):
 			trackframes = Variable(torch.stack(batch[0]))
 			detectionframe = Variable(torch.stack(batch[1]))
 			labels = Variable(torch.LongTensor(batch[2]))
+			trackcoords = Variable(torch.stack(batch[3]))
+			detectioncoord = Variable(torch.stack(batch[4]))
+
 
 			if torch.cuda.is_available():
 				trackframes = trackframes.cuda()
 				detectionframe = detectionframe.cuda()
 				labels = labels.cuda()
+				trackcoords = trackcoords.cuda()
+				detectioncoord = detectioncoord.cuda()
 
 			trackmodel = trackmodel.train()
 
-			output = trackmodel(trackframes, detectionframe)
+			output = trackmodel(trackframes, detectionframe, trackcoords, detectioncoord)
 			output = functional.log_softmax(output, dim=-1)
 			loss = criterion(output, labels)
 

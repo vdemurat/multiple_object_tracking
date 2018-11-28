@@ -5,6 +5,7 @@ from torch.autograd import Variable
 
 from rnnlayer import RNNLayer, RNNTracker
 from appearancemodel import AppearanceModel
+from motionmodel import MotionModel
 
 from trainutils import load_model
 
@@ -16,8 +17,8 @@ class TrackingModel(nn.Module):
 					use_appearance=True, 
 					pretrained_appearance=True,
 					sterile_appearance=False,
-					use_motion=False, 
-					pretrained_motion=False,
+					use_motion=True, 
+					pretrained_motion=True,
 					sterile_motion=False,
 
 				):
@@ -28,28 +29,45 @@ class TrackingModel(nn.Module):
 		self.use_motion = use_motion
 
 		# Unnecessary repacking: can directly use dict_args
-		self.input_dim = dict_args['input_dim']
+		self.app_input_dim = dict_args['app_input_dim']
+		self.mot_input_dim = dict_args['mot_input_dim']
 		self.hidden_dim = dict_args['rnn_hdim']
 		self.rnn_type = dict_args['rnn_type']
 		self.feature_dim = dict_args['feature_dim']
 
-		if pretrained_appearance:
-			self.appearance_layer = load_model(os.getcwd(), 'appearance.pth', AppearanceModel)
-			if sterile_appearance:
-				self.appearance_layer.sterile()
-		else:
-			appearance_dict_args = {
-					'input_dim' : self.input_dim,
-					'rnn_hdim' : self.hidden_dim,
-					'rnn_type' : self.rnn_type,
-					'feature_dim' : self.feature_dim,			
-			}
-			self.appearance_layer = RNNLayer(appearance_dict_args)
-
 		self.tracking_input_dim = 0
-		if self.use_appearance: 
+
+		if self.use_appearance:
+			if pretrained_appearance:
+				self.appearance_layer = load_model(os.getcwd(), 'appearance.pth', AppearanceModel)
+				if sterile_appearance:
+					self.appearance_layer.sterile()
+			else:
+				appearance_dict_args = {
+						'input_dim' : self.app_input_dim,
+						'rnn_hdim' : self.hidden_dim,
+						'rnn_type' : self.rnn_type,
+						'feature_dim' : self.feature_dim,			
+				}
+				self.appearance_layer = RNNLayer(appearance_dict_args)
+
 			self.tracking_input_dim += self.appearance_layer.feature_dim
+		
+
 		if self.use_motion:
+			if pretrained_motion:
+				self.motion_layer = load_model(os.getcwd(), 'motion.pth', MotionModel)
+				if sterile_motion:
+					self.motion_layer.sterile()
+			else:
+				motion_dict_args = {
+						'input_dim' : self.mot_input_dim,
+						'rnn_hdim' : self.hidden_dim,
+						'rnn_type' : self.rnn_type,
+						'feature_dim' : self.feature_dim,			
+				}
+				self.motion_layer = RNNLayer(motion_dict_args)
+
 			self.tracking_input_dim += self.motion_layer.feature_dim
 
 		tracking_dict_args = {
@@ -62,7 +80,7 @@ class TrackingModel(nn.Module):
 		self.tracking_layer = RNNTracker(tracking_dict_args)
 
 
-	def forward(self, isequence, itensor):
+	def forward(self, isequence, itensor, msequence, mtensor):
 		#isequence: batch_size * seq_len * inp_dim
 		#itensor: batch_size * inp_dim
 
@@ -71,7 +89,7 @@ class TrackingModel(nn.Module):
 			csequence = asequence
 
 		if self.use_motion:
-			_, msequence = self.motion_layer(isequence, itensor)
+			_, msequence = self.motion_layer(msequence, mtensor)
 			if self.use_appearance:
 				csequence = torch.cat((asequence, msequence), dim=2)
 			else: csequence = msequence
@@ -83,7 +101,8 @@ class TrackingModel(nn.Module):
 if __name__=='__main__':
 
 	dict_args = {
-					'input_dim' : 4,
+					'app_input_dim' : 4,
+					'mot_input_dim' : 5,
 					'rnn_hdim' : 3,
 					'rnn_type' : 'LSTM',
 					'feature_dim' : 5,
@@ -92,18 +111,14 @@ if __name__=='__main__':
 	trackin_model = TrackingModel(
 			dict_args,
 			pretrained_appearance = False,
+			pretrained_motion = False
 		)
-	print(next(trackin_model.appearance_layer.parameters()).requires_grad)
-	
-	trackin_model = TrackingModel(
-			dict_args,
-			pretrained_appearance = True,
-		)
-	print(next(trackin_model.appearance_layer.parameters()).requires_grad)
 
 	output = trackin_model(
-		Variable(torch.randn(2,6,1000)), 
-		Variable(torch.randn(2,1000))
+		Variable(torch.randn(2,6,4)), 
+		Variable(torch.randn(2,4)),
+		Variable(torch.randn(2,6,5)), 
+		Variable(torch.randn(2,5))
 	)
 
 	print(output.size())
