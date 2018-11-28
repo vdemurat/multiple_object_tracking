@@ -99,6 +99,7 @@ def imagetotensor(pixel, pretrained, datafolder, dirtype, dirid, frameid, coordi
         		normalize,
     		])
 		image = transform(image).unsqueeze(0)
+		if pretrained is None: return image.squeeze(0)
 		if torch.cuda.is_available(): image = image.cuda()
 		tensor = pretrained(Variable(image)).view(-1).data.cpu()
 		pixel.addtensor(pixelkey, tensor)
