@@ -69,6 +69,7 @@ def train_tracker(use_pickle, use_appearance=True, use_motion=False):
 
 			trackmodel = trackmodel.train()
 
+			#inefficient way of passing cuda tensors
 			output = trackmodel(trackframes, detectionframe, trackcoords, detectioncoord)
 			output = functional.log_softmax(output, dim=-1)
 			loss = criterion(output, labels)
@@ -103,15 +104,19 @@ def train_tracker(use_pickle, use_appearance=True, use_motion=False):
 				trackframes = Variable(torch.stack(batch[0]))
 				detectionframe = Variable(torch.stack(batch[1]))
 				labels = Variable(torch.LongTensor(batch[2]))
+				trackcoords = Variable(torch.stack(batch[3]))
+				detectioncoord = Variable(torch.stack(batch[4]))
 
 				if torch.cuda.is_available():
 					trackframes = trackframes.cuda()
 					detectionframe = detectionframe.cuda()
 					labels = labels.cuda()
+					trackcoords = trackcoords.cuda()
+					detectioncoord = detectioncoord.cuda()
 
 				trackmodel = trackmodel.eval()
 
-				output = trackmodel(trackframes, detectionframe)
+				output = trackmodel(trackframes, detectionframe, trackcoords, detectioncoord)
 
 				predictions = output.max(dim=-1)[1]
 				num_correct += (predictions == labels).sum().data[0]
