@@ -8,6 +8,7 @@ class datastorage():
 		self.data_folder = data_folder
 		self.tracks_data = {} #{dirindex : {trackindex : [{frameindex, detectionid}]}}
 		self.detections = {} #{dirindex : {frameindex : {detectionid : (p1, p2, p3, p4)}}}
+		self.test_data = {} #{dirindex : {frameindex : []}}
 		self.traintracks_data = {}
 		self.valtracks_data = {}
 		self.negsamples = 1
@@ -89,11 +90,30 @@ class datastorage():
 								if sampleid != detectionid:
 									yield dirindex, tframeids, trackcoords, dframeid, sampledetection, 0
 
+	def preparetest(self, dir_type):
+		for dir in os.listdir(self.data_folder):
+			if dir_type in dir:
+				boundingboxes = open(os.path.join(self.data_folder, dir, 'det/det.txt'), 'r')
+				for line in boundingboxes:
+					frameid, trackid, p1, p2, p3, p4, score, _, _, _ = line.strip().split(',')
+
+					if dir not in self.test_data:
+						self.test_data[dir] = {}					
+					if frameid not in self.test_data[dir]:
+						self.test_data[dir][frameid] = []
+
+					self.test_data[dir][frameid].append((float(p1), float(p2), float(p3), float(p4)))
+
+	def iteratetest(self):
+		for dirindex, dirvalue in self.test_data.items():
+			for frameindex, framelist in self.test_data[dirindex].items():
+				yield dirindex, frameindex, framelist
+
 
 if __name__ == '__main__':
 	train_folder = 'MOT17/train/'
 	data = datastorage(train_folder)
-	data.prepare('DPM')
+	'''data.prepare('DPM')
 	data.split(6)
 	#data.print('04', '141')
 	count = 0
@@ -102,6 +122,9 @@ if __name__ == '__main__':
 		break
 	for datum in data.iterate(6,'val'):
 		print(datum)
-		break
+		break'''
 
+	data = datastorage(train_folder)
+	data.preparetest('DPM')
+	print(data.test_data['MOT17-02-DPM']['600'])
 

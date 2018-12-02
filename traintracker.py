@@ -82,7 +82,7 @@ def train_tracker(use_pickle, use_appearance=True, use_motion=False):
 			if((i+1)%1 == 0):
 				print('Epoch: [{0}/{1}], Step: [{2}/{3}], Loss: {4}'.format( \
 							epoch+1, num_epochs, i+1, train_data_size//train_batch_size, loss.data[0]))
-
+			break
 
 		#Saving the model
 		if(epoch%1 == 0):
@@ -139,5 +139,5 @@ if __name__=='__main__':
 	if use_pkl == 'True': use_pickle = True
 	else: use_pickle = False
 	
-	train_tracker(use_pickle)
+	train_tracker(use_pickle, False, True)
 

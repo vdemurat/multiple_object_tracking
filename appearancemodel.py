@@ -40,6 +40,18 @@ class AppearanceModel(nn.Module):
 		return output, features
 
 
+	def track(self, num_trackings):
+		self.appearance_layer.track(num_trackings)
+	
+	def score(self, detection):
+		detection = self.dimred_layer(detection)
+		features = self.appearance_layer.score(detection)
+		return features
+
+	def step(self, input):
+		input = self.dimred_layer(input)
+		self.appearance_layer.step(input)
+
 if __name__=='__main__':
 	dict_args = {
 					'input_dim' : 4,

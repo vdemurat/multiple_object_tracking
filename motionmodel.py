@@ -35,6 +35,15 @@ class MotionModel(nn.Module):
 		output, features = self.motion_layer(isequence, itensor)
 		return output, features
 
+	def track(self, num_trackings):
+		self.motion_layer.track(num_trackings)
+	
+	def score(self, detection):
+		features = self.motion_layer.score(detection)
+		return features
+
+	def step(self, input):
+		self.motion_layer.step(input)
 
 if __name__=='__main__':
 	dict_args = {
