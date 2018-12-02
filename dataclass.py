@@ -91,6 +91,7 @@ class datastorage():
 									yield dirindex, tframeids, trackcoords, dframeid, sampledetection, 0
 
 	def preparetest(self, dir_type):
+		self.dir_type = dir_type
 		for dir in os.listdir(self.data_folder):
 			if dir_type in dir:
 				boundingboxes = open(os.path.join(self.data_folder, dir, 'det/det.txt'), 'r')

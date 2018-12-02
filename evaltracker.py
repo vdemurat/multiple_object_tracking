@@ -63,9 +63,11 @@ def eval_tracker(use_pickle=False):
 		detections = Variable(torch.stack(batch[0]))
 		frameid = batch[1]
 		dirtype = batch[2][0]
+		frametensors = Variable(torch.stack(batch[3]))
 
 		if torch.cuda.is_available():
 			detections = detections.cuda()
+			frametensors = frametensors.cuda()
 
 		if prev_dir != dirtype and prev_dir != None:
 			print(prev_dir)
@@ -73,7 +75,7 @@ def eval_tracker(use_pickle=False):
 			tracks = []
 
 		detections = detections.squeeze(0)
-		indices = trackingmodel.score(None, detections)
+		indices = trackingmodel.score(frametensors, detections)
 
 		frametracks = []
 		for index in indices:

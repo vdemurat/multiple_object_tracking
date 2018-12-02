@@ -62,9 +62,15 @@ class testset(data.Dataset):
 
 	def __getitem__(self, index):
 		dirvalue, frameid, detectionslist = self.data[index]
+		trackframes = []
+		dirid = dirvalue.strip().split('-')[1]
+		for detection in detectionslist:
+			coords = (str(detection[0]), str(detection[1]), str(detection[2]), str(detection[3]))
+			imagetensor = imagetotensor(self.pixel, self.pretrained, self.dataclass.data_folder, self.dataclass.dir_type, dirid, frameid, coords)
+			trackframes.append(imagetensor)
 		for i in range(len(detectionslist)):
 			detectionslist[i] = coordstotensor(detectionslist[i])
-		return [torch.stack(detectionslist), frameid, dirvalue]
+		return [torch.stack(detectionslist), frameid, dirvalue, torch.stack(trackframes)]
 
 
 	def create(self):
@@ -73,8 +79,8 @@ class testset(data.Dataset):
 			self.data.append([dirvalue, frameid, detections])
 
 	def collate_fn(self, mini_batch):
-		detectionsbatch, frameids, dirtypes = zip(*mini_batch)
-		return detectionsbatch, frameids, dirtypes
+		detectionsbatch, frameids, dirtypes, framesbatch = zip(*mini_batch)
+		return detectionsbatch, frameids, dirtypes, framesbatch
 
 
 if __name__ == '__main__':
@@ -101,12 +107,13 @@ if __name__ == '__main__':
 	test_folder = 'MOT17/train/'
 	datastorage = datastorage(test_folder)
 	datastorage.preparetest('DPM')
+	pixel = Pixel('pixel.pkl')
+	pretrained = PreTrainedResnet({'intermediate_layers':['fc']})
 
-	test_dataset = testset(datastorage, None, None)
+	test_dataset = testset(datastorage, pixel, pretrained)
 	test_dataset.create()
 
-	detectionsbatch, frameidsbatch, dirtypesbatch = test_dataset.collate_fn([test_dataset[0], test_dataset[1]])
+	detectionsbatch, frameidsbatch, dirtypesbatch, framesbatch = test_dataset.collate_fn([test_dataset[0], test_dataset[1]])
 
-	print(detectionsbatch)
-	print(dirtypesbatch)
+	print(framesbatch[0].size())
 
