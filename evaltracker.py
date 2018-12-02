@@ -35,21 +35,21 @@ def eval_tracker(use_pickle=False):
 	eval_dataloader, eval_data_size = \
 		get_eval_data(eval_batch_size, directory_type, pixel, pretrained)
 
-	trackingmodel.track(25)
+	trackingmodel.track(30)
 	prev_dir = None
 	tracks = []
 
 	def savetracks(tracks, pdir):
 		file = open(os.path.join(eval_folder, pdir+'.txt'), 'w')
 		nptracks = np.stack(tracks) #num_frames * num_tracks * 4
-		np.moveaxis(nptracks, 0, 1) #num_tracks * num_frames * 4
+		nptracks = np.moveaxis(nptracks, 0, 1) #num_tracks * num_frames * 4
 		num_tracks, num_frames, num_coords = nptracks.shape
 		for track in range(num_tracks):
 			for frame in range(num_frames):
 				if nptracks[track][frame][0] != -1:
-					file.write('{} {} {:.2f} {:.2f} {:.2f} {:.2f} -1 -1 -1 \n'.format(
-						track,
-						frame,
+					file.write('{},{},{:.2f},{:.2f},{:.2f},{:.2f},-1,-1,-1\n'.format(
+						track+1,
+						frame+1,
 						nptracks[track][frame][0], 
 						nptracks[track][frame][1],
 						nptracks[track][frame][2],
